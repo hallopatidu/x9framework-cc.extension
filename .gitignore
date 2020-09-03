@@ -275,6 +275,9 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Cocos Creator meta file
+*.meta
+
 # Visual Studio 6 build log
 *.plg
 

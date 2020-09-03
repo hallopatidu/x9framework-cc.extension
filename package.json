@@ -1,0 +1,19 @@
+{
+  "name": "x9extension",
+  "version": "0.0.1",
+  "description": "Using X9 Game Framework for projects.",
+  "author": "Hallo",
+  "main": "main.js",
+  "dependencies": {
+    "archiver": "^5.0.0"
+  },
+  "runtime-resource": {
+    "path": "runtime_module",
+    "name": "module"
+  },
+  "reload": {
+    "ignore": [
+      "runtime_module/**/*"
+    ]
+  }
+}
