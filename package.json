@@ -1,5 +1,5 @@
 {
-  "name": "x9extension",
+  "name": "@hallopatidu/x9framework-CCExtension",
   "version": "0.0.1",
   "description": "Using X9 Game Framework for projects.",
   "author": "Hallo",
@@ -15,5 +15,12 @@
     "ignore": [
       "runtime_module/**/*"
     ]
+  },
+  "publishConfig": {
+    "registry":"https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hallopatidu/x9framework-CCExtension.git"
   }
 }

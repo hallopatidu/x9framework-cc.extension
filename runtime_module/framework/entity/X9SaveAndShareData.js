@@ -14,8 +14,15 @@ cc.Class({
     ctor(){
         this._state = Object.create(null);
         this.encryptKey = null;
-        // setTimeout(this.sync.bind(this), 200);
-        // this.sync();
+    },
+
+    /**
+     * Constructs the initial state for this store. This is called once during
+     * construction of the store.
+     */
+    getInitialState() {
+        this.sync();
+        return this._state ? this._state : Object.create(null);
     },
     
     //----------------
