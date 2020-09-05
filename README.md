@@ -17,4 +17,8 @@ Framework bám chặt và bổ trợ cho phần mềm Cocos Creator (một phầ
 ***
 [Các khái niệm](https://github.com/hallopatidu/x9framework-CCExtension/wiki/C%C3%A1c-kh%C3%A1i-ni%E1%BB%87m-(Concepts))
 ***
-[Code mẫu](https://github.com/hallopatidu/x9framework-CCExtension/wiki/Code-m%E1%BA%ABu-(Example))
+[Hướng dẫn](https://github.com/hallopatidu/x9framework-CCExtension/wiki/H%C6%B0%E1%BB%9Bng-d%E1%BA%ABn-(Example))
+***
+[Code mẫu](https://github.com/hallopatidu/x9framework-example)
+
+
