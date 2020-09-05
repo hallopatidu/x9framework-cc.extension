@@ -9,7 +9,7 @@ Framework bám chặt và bổ trợ cho phần mềm Cocos Creator (một phầ
 
 ## CÀI ĐẶT
 * Kéo git về.
-* Chạy đoạn lệnh 'npm install' trong Window Command Prompt tại thư mục git để cài các gói nodejs cần thiết, 
+* Chạy đoạn lệnh 'npm install' trong Window Command Prompt tại thư mục git để cài các gói nodejs cần thiết.
 
 
 ***
