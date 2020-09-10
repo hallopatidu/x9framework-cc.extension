@@ -34,11 +34,11 @@ cc.Class({
      * @param {*} data 
      */
     share(data){
-        this._getStateNode()[this._validateId()] = this._validateData(data);
+        this._getDataNode()[this._validateId()] = this._validateData(data);
     },
 
     unshare(){
-        this._getStateNode()[this._validateId()] = null;
+        this._getDataNode()[this._validateId()] = null;
     },
 
     /**
