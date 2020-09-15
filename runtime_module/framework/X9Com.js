@@ -93,39 +93,68 @@ var X9Component= cc.Class({
             }
             // 
             //
-            var instance;
+            let cachedComp;
+            let instance;
+            let node = targetNode && (targetNode instanceof cc.Node) ? targetNode : this.node;
             if(typeof typeOrClassName == "string"){
-                if(this._compRefs[typeOrClassName]){
-                    return this._compRefs[typeOrClassName];
+                cachedComp = this._useCache(typeOrClassName, node);
+                if(cachedComp){
+                    return cachedComp;
                 }
-                instance = this._getRepresentComponent(typeOrClassName, targetNode);
+                instance = this._getRepresentComponent(typeOrClassName, node);
                 // Nếu không lấy được instance, chuyển đổi thành CCClass qua hàm require.
-                instance = instance ? this.use(instance, targetNode) : this.use(require(typeOrClassName));
+                instance = instance ? this.use(instance, node) : this.use(require(typeOrClassName));
                 
             }else if(cc.js.isChildClassOf(typeOrClassName, cc.Component)){
                 //
                 let className = cc.js.getClassName(typeOrClassName);
-                if(this._compRefs[className]){
-                    return this._compRefs[className];
+                cachedComp = this._useCache(className, node);
+                if(cachedComp){
+                    return cachedComp;
                 }
-                instance = this._getRepresentComponent(typeOrClassName, targetNode);
+                instance = this._getRepresentComponent(typeOrClassName, node);
                 if(!instance){
                     instance = this.node.addComponent(typeOrClassName);
                 }
-                instance = this.use(instance, targetNode);
+                instance = this.use(instance, node);
 
-            }else{
-                if(this._compRefs[typeOrClassName.constructor.name]){
-                    return this._compRefs[typeOrClassName.constructor.name];
+            }else{                
+                cachedComp = this._useCache(typeOrClassName.constructor.name, node);
+                if(cachedComp){
+                    return cachedComp;
                 }
                 instance =  this._implementX9Component(typeOrClassName);
-                this._compRefs[instance.constructor.name] = instance;
+                this._cached(instance);
+
             }
             return instance;
 
         }catch(err){
             cc.error(err);
         }
+    },
+
+    /**
+     * 
+     * @param {*} className 
+     * @param {*} targetNode 
+     */
+    _useCache(className, targetNode){
+        let node = targetNode && (targetNode instanceof cc.Node) ? targetNode : this.node;
+        let refName = node.name + "::" + className;
+        return this._compRefs[refName] ? this._compRefs[refName] : null;
+    },
+
+    /**
+     * 
+     * @param {*} instance 
+     */
+    _cached(instance){
+        if(!instance || !instance.node){
+            throw new Error("Component không tồn tại hoặc chưa xác định node.")
+        }        
+        let refName = instance.node.name + "::" + instance.constructor.name;
+        this._compRefs[refName] = instance;
     },
     
     

@@ -84,7 +84,7 @@ cc.Class({
     getData(id){        
         // Tim share data truoc.
         let dataId = this._validateId(id);
-        let data = this._getDataNode()[id];
+        let data = this._getDataNode()[dataId];
         // Khong co moi lay tu storage
         data = data ? data : cc.sys.localStorage.getItem(dataId);
         return data;
