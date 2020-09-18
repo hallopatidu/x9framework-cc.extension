@@ -1,6 +1,5 @@
-# x9framework-CCExtension
-A Framework for Cocos Creator Editor
-Base on Flux Architect - a Data Flow Design Pattern.
+# x9framework-cc.extension
+A Framework for Cocos Creator Editor based on Flux Architect - a Data Flow Design Pattern.
 ![](https://github.com/hallopatidu/x9framework-CCExtension/blob/master/doc/images/fig02.PNG)
 ![Cứ kế thừa là có thể được phân loại trong cocos creator](https://github.com/hallopatidu/x9framework-CCExtension/blob/master/doc/images/fig03.png)
 
@@ -9,6 +8,7 @@ Framework bám chặt và bổ trợ cho phần mềm Cocos Creator (một phầ
 
 ## CÀI ĐẶT
 * Kéo git về.
+* Copy cả thư mục ngoài cùng vào thư mục /packages trong Cocos Creator Project
 * Chạy đoạn lệnh 'npm install' trong Window Command Prompt tại thư mục git để cài các gói nodejs cần thiết.
 
 
