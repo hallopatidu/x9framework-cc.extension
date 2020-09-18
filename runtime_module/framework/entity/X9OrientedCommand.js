@@ -21,7 +21,7 @@ var X9OrientedCommand = cc.Class({
         }
         option[X9OrientedCommand.TYPE_ARG] = type ? type : "default";
         if(classTargetName){
-            option[X9AutoReduceStyle.CLASS_ARG] = classTargetName;
+            option[X9OrientedCommand.CLASS_ARG] = classTargetName;
         }
 
         if(this.dispatch && (typeof this.dispatch === 'function')){     
