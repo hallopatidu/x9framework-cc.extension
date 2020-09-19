@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
- const X9OrientedCommand = require('X9OrientedCommand');
+const X9OrientedCommand = require('X9OrientedCommand');
  
 /**
  * Code Template hỗ trợ một dạng sử dụng với X9 Framework.
@@ -41,8 +41,6 @@ var X9AutoReduceStyle = cc.Class({
     ctor(){
         this._applyToSubclass = true;
         this._lastState = null;
-
-
         this._asyncViewCmds = [];
         this._asyncViewTasks = Object.create(null);
     },
@@ -50,8 +48,8 @@ var X9AutoReduceStyle = cc.Class({
     //--------- State Deep Comparing ------------
 
     /**
-     * 
-     * @param {*} value 
+     * Nếu true, bắt buộc phải có sự thay đổi mỗi lần command gửi đến.
+     * @param {Boolean} value 
      */
     applyStateDeepComparing(value){
         this._deepCompare = value;
@@ -73,6 +71,9 @@ var X9AutoReduceStyle = cc.Class({
         }
     },
 
+    /**
+     * 
+     */
     getStateType(){
         let state = this.getState();
         return state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
@@ -81,6 +82,7 @@ var X9AutoReduceStyle = cc.Class({
     //----------- OVERRIDE ------------------------
     // 
     //---------------------------------------------
+
     /**
      * 
      * @param {*} state 
@@ -108,25 +110,12 @@ var X9AutoReduceStyle = cc.Class({
      */
     onChange(newState){
         if(this instanceof cc.Component){
-            // override 
-            // let stateType = newState[X9OrientedCommand.TYPE_ARG]
-            // if(newState && (this.allowCommandTypes().indexOf(stateType) != -1)) {
             if(newState) {
-                //
                 let stateType = newState[X9OrientedCommand.TYPE_ARG];
                 this.onUpdateState(newState);
-                if( this._asyncViewCmds.indexOf(stateType) == -1){
+                if( this._asyncViewCmds.indexOf(stateType) == -1){                    
                     this._excuteViewTasks(stateType, this.onUpdateView.bind(this));
                 }
-                //
-                // let isPrivateCommand = this._isPrivateForThis(newState)
-                // // xoa cac class arg điều hướng.                
-                // delete newState[X9OrientedCommand.CLASS_ARG];
-                // // Phân luông gửi command.
-                // if(isPrivateCommand ? this.onPrivateCommand(newState) : this.onPublicCommand(newState)){
-                //     this.onUpdateView();
-                // }
-                // 
             }
         }else{
             throw new Error(this.constructor.name + "::onChange(newState) : " +" Chỉ gọi trong Subclass của X9 Components")
@@ -148,6 +137,7 @@ var X9AutoReduceStyle = cc.Class({
     },
 
     //--------- State Deep Comparing ------------
+
     /**
      * 
      * @param {*} lastState 
@@ -172,7 +162,6 @@ var X9AutoReduceStyle = cc.Class({
     //  PRIVATE FUNCTION
     //----------------------------------
 
-    //----------private command --------------------
     /**
      * 
      * @param {*} payload 
@@ -193,12 +182,22 @@ var X9AutoReduceStyle = cc.Class({
     // Render view theo thứ tự
     //-----------------------------------------------------------
     
+    /**
+     * 
+     * @param {*} cmdType 
+     */
     allowAsyncViewWithCMD(cmdType){
         if(this._asyncViewCmds.indexOf(cmdType) == -1){            
             this._asyncViewCmds.push(cmdType);
         }
     },
 
+
+    /**
+     * 
+     * @param {*} cmdType 
+     * @param  {...any} args 
+     */
     sequence(cmdType, ...args){        
         var taskView = [];
         for (let index = 0; index < args.length; index++) {
@@ -222,14 +221,22 @@ var X9AutoReduceStyle = cc.Class({
         this._asyncViewTasks[cmdType] = taskView;
     },
 
+    /**
+     * 
+     * @param {*} cmdType 
+     * @param {*} endTask 
+     */
     _excuteViewTasks(cmdType, endTask){
-        if(this._asyncViewTasks && this._asyncViewTasks[cmdType] && this._asyncViewTasks[cmdType].length){            
-            let asyncTasks = this._asyncViewTasks[cmdType].slice(); 
-                // asyncTasks.push(this.constructor.name);
+        if(this._asyncViewTasks && this._asyncViewTasks[cmdType] && this._asyncViewTasks[cmdType].length){
+            // 
+            let asyncTasks = this._asyncViewTasks[cmdType].slice();
+                if(asyncTasks.indexOf(this) == -1 && asyncTasks.indexOf(this.constructor.name) == -1){
+                    asyncTasks.push(this);
+                }
                 asyncTasks.reduce( (accumulatorPromise, nextID) => {  
                     return accumulatorPromise.then(() => {
                         return ((x9CompName)=>{
-                            const x9Comp = this.use(x9CompName);
+                            const x9Comp = (x9CompName === this) ? x9CompName : this.use(x9CompName);
                             return new Promise((resolve, reject) => {
                                 if(x9Comp && x9Comp.onUpdateView){
                                     x9Comp.onUpdateView(resolve);
@@ -240,53 +247,24 @@ var X9AutoReduceStyle = cc.Class({
                         })(nextID);
                     });
                 }, Promise.resolve());
+        }else{
+            endTask(()=>{ cc.log('excute task')});
         }
-        // else{
-        //     endTask(()=>{ cc.log('excute task')});
-        // }
-        endTask(()=>{ 
-            // cc.log('excute task')
-        });
+        // 
     },
-
-    // methodThatReturnsAPromise(x9CompName) {
-    //     let x9Comp = this.use(x9CompName);
-    //     return new Promise((resolve, reject) => {
-    //         if(x9Comp.onUpdateView){
-    //             x9Comp.onUpdateView(resolve);
-    //         }else{
-    //             resolve();
-    //         }
-    //     });
-    // },
 
     //--------------------------------------------
 
     /**
-     * Sử dụng hàm onPrivateCommand để xử lý riêng với các cmd chỉ đến trực tiếp mà không bắn public tới các X9 Component khác.
-     * Nếu trả về false sẽ không gọi hàm onUpdateView
+     * 
      * @param {*} newState 
      */
-    // onPrivateCommand(newState){
-    //     return true;
-    // },
-
-    /**
-     * Sử dụng hàm onPublicCommand để xử lý các cmd dạng public.
-     * Những lúc chỉ cần cập nhật dữ liệu sau đó không càn render lại UI thì trả về false, 
-     * lúc đó sẽ không gọi hàm onUpdateView
-     * @param {*} newState 
-     */
-    // onPublicCommand(newState){
-    //     return true;
-    // },
-
     onUpdateState(newState){
         return true;
     },    
     
     /**
-     * Hàm gọi ra khi mỗi lần có cmd pass qua các bước lọc allowCommandTypes > onPublic/onPrivate Command > onUpdateView
+     * Hàm gọi khi cập nhật data vào view.
      * 
      * @param {String} stateType 
      */
