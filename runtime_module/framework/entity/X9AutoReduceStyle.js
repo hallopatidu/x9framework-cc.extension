@@ -113,7 +113,7 @@ var X9AutoReduceStyle = cc.Class({
             if(newState) {
                 let stateType = newState[X9OrientedCommand.TYPE_ARG];
                 this.onUpdateState(newState);
-                if( this._asyncViewCmds.indexOf(stateType) == -1){                    
+                if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){                    
                     this._excuteViewTasks(stateType, this.onUpdateView.bind(this));
                 }
             }
@@ -187,7 +187,7 @@ var X9AutoReduceStyle = cc.Class({
      * @param {*} cmdType 
      */
     allowAsyncViewWithCMD(cmdType){
-        if(this._asyncViewCmds.indexOf(cmdType) == -1){            
+        if( this._asyncViewCmds && this._asyncViewCmds.indexOf(cmdType) == -1){            
             this._asyncViewCmds.push(cmdType);
         }
     },

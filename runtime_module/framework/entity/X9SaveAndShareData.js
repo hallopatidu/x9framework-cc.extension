@@ -46,10 +46,10 @@ const X9SaveAndShareData = cc.Class({
                 this._getDataNode()[dataId] = {};
             }
             let nodeData = this._getDataNode()[dataId]; // class             
-            nodeData[uuid] = Object.assign(nodeData[uuid] || {}, data);
+            nodeData[uuid] = Object.assign(nodeData[uuid] || {}, (data || this.getState()) );
         }else{
             // hiem khi xay ra.
-            this._getDataNode()[dataId] = Object.assign({}, data);
+            this._getDataNode()[dataId] = Object.assign({}, (data || this.getState()) );
         }
     },
 
@@ -67,14 +67,36 @@ const X9SaveAndShareData = cc.Class({
 
     /**
      * Truoc khi lưu vào storage, sẽ share data trước.
+     * Việc lưu vào storage sẽ lưu tổng hợp theo class.
      * @param {*} data 
      */
     save(data){
-        cc.sys.localStorage.setItem(this._validateId(), this._validateData(data));
+        let dataURIArr = this._splitDataIdToArray();// className::uuid        
+        let dataId = dataURIArr[0];
+        let saveData = data || this.getState();
+        let lastSave = cc.sys.localStorage.getItem(dataId);
+        lastSave = lastSave ? JSON.parse(lastSave) : null;
+        saveData = lastSave ? Object.assign(lastSave, saveData) : saveData;
+        cc.sys.localStorage.setItem(dataId, this._validateData(saveData));
     },
 
     unsave(){
-        cc.sys.localStorage.removeItem(this._validateId());
+        let dataURIArr = this._splitDataIdToArray();// className::uuid
+        // let uuid = dataURIArr[1];
+        let dataId = dataURIArr[0];
+        // let jsonData = 
+        // let saveData = JSON.parse(cc.sys.localStorage.getItem(dataId));
+        // let saveData = JSON.parse(cc.sys.localStorage.getItem(dataId) || Object.create(null))
+        // if(saveData && uuid){
+        //     delete saveData[uuid];
+        // }
+        // if(saveData && Object.keys(saveData).length){
+        //     cc.sys.localStorage.setItem(dataId, this._validateData(saveData));            
+        // }else{            
+        //     cc.sys.localStorage.removeItem(dataId);
+        // }
+        cc.sys.localStorage.removeItem(dataId);
+        // 
     },
 
     /**
@@ -136,13 +158,13 @@ const X9SaveAndShareData = cc.Class({
             data = keys.length == 1 ? data[keys[0]] : data;
         }
         // Khong co moi lay tu storage
-        // Muốn lấy data từ localStorage phải biết thêm chính xác uuid của X9Component đó. Ví dụ: X9Component::Com.61
-        data = data ? data : JSON.parse(cc.sys.localStorage.getItem(this._validateId(id)));
-        // if(uuid && data){
-        //     let uuidData = {};
-        //     uuidData[uuid] = data
-        //     data = uuidData[uuid]
-        // }
+        if(!data){
+            // Luôn lưu trực tiếp vào class.
+            data = cc.sys.localStorage.getItem(dataId) 
+            data = data ? JSON.parse( data ) : null;            
+            // data = (data && uuid) ? data[uuid] : data;
+        }
+        // 
         return data;
     },
 
