@@ -1,6 +1,6 @@
 
-const SAVEANDSHARE_URI = 'x9data://';
-const DATA_NODE_NAME = 'share-data';
+const X9LocalData = require('X9LocalData');
+
 /**
  * Tính năng save và share data cho X9Cmd và X9Com.
  * Auto Save : tự động save data vào local stogare
@@ -10,11 +10,8 @@ const DATA_NODE_NAME = 'share-data';
  */
 const X9SaveAndShareData = cc.Class({
     extends: cc.Class,
-
-    statics:{
-        SEPARATE : '::',
-    },
-
+    mixins:[X9LocalData],
+    
     ctor(){
         this._state = Object.create(null);
         this.encryptKey = null;
@@ -40,19 +37,23 @@ const X9SaveAndShareData = cc.Class({
     share(data){
         let dataURIArr = this._splitDataIdToArray();// className::uuid
         let uuid = dataURIArr[1];
-        let dataId = dataURIArr[0];        
+        let dataId = dataURIArr[0];
+        let dataNode = this._getDataNode();      
         if(uuid){
-            if(!this._getDataNode()[dataId]){
-                this._getDataNode()[dataId] = {};
+            if(!dataNode[dataId]){
+                dataNode[dataId] = Object.create(null);
             }
-            let nodeData = this._getDataNode()[dataId]; // class             
-            nodeData[uuid] = Object.assign(nodeData[uuid] || {}, (data || this.getState()) );
+            let nodeData = dataNode[dataId]; // class
+            nodeData[uuid] = Object.assign(nodeData[uuid] || Object.create(null), JSON.parse( JSON.stringify( data || this.getState() ) ) );
         }else{
             // hiem khi xay ra.
-            this._getDataNode()[dataId] = Object.assign({}, (data || this.getState()) );
+            dataNode()[dataId] = JSON.parse( JSON.stringify(data || this.getState()) ) ;
         }
     },
 
+    /**
+     * 
+     */
     unshare(){
         let dataURIArr = this._splitDataIdToArray();// className::uuid
         let uuid = dataURIArr[1];
@@ -62,6 +63,7 @@ const X9SaveAndShareData = cc.Class({
             nodeData[uuid] = null;
         }else{
             this._getDataNode()[dataId] = null;
+            delete this._getDataNode()[dataId];
         }
     },
 
@@ -80,23 +82,13 @@ const X9SaveAndShareData = cc.Class({
         cc.sys.localStorage.setItem(dataId, this._validateData(saveData));
     },
 
+    /**
+     * 
+     */
     unsave(){
-        let dataURIArr = this._splitDataIdToArray();// className::uuid
-        // let uuid = dataURIArr[1];
+        let dataURIArr = this._splitDataIdToArray();
         let dataId = dataURIArr[0];
-        // let jsonData = 
-        // let saveData = JSON.parse(cc.sys.localStorage.getItem(dataId));
-        // let saveData = JSON.parse(cc.sys.localStorage.getItem(dataId) || Object.create(null))
-        // if(saveData && uuid){
-        //     delete saveData[uuid];
-        // }
-        // if(saveData && Object.keys(saveData).length){
-        //     cc.sys.localStorage.setItem(dataId, this._validateData(saveData));            
-        // }else{            
-        //     cc.sys.localStorage.removeItem(dataId);
-        // }
         cc.sys.localStorage.removeItem(dataId);
-        // 
     },
 
     /**
@@ -139,72 +131,5 @@ const X9SaveAndShareData = cc.Class({
         this._state = state;
     },
 
-    /**
-     * Lấy share data trước. Nếu không có sẽ lấy vào từ localStorage.
-     * Lưu ý:
-     * - Muốn lấy data từ localStorage phải biết thêm chính xác uuid của X9Component đó. Ví dụ: X9Component::Com.61
-     * @param {String} id // X9 component class name
-     */
-    getData(id){        
-        let dataURIArr = this._splitDataIdToArray(id);
-        let uuid = dataURIArr[1];
-        let dataId = dataURIArr[0];
-        
-        let data = this._getDataNode()[dataId];
-        if(uuid && data){
-            data = data[uuid]
-        }else if(data && typeof data === 'object'){
-            let keys = Object.keys(data);
-            data = keys.length == 1 ? data[keys[0]] : data;
-        }
-        // Khong co moi lay tu storage
-        if(!data){
-            // Luôn lưu trực tiếp vào class.
-            data = cc.sys.localStorage.getItem(dataId) 
-            data = data ? JSON.parse( data ) : null;            
-            // data = (data && uuid) ? data[uuid] : data;
-        }
-        // 
-        return data;
-    },
-
-
-    _splitDataIdToArray(id){
-        let uuid = null;
-        let dataId = this._validateId(id);
-        if(dataId.indexOf(X9SaveAndShareData.SEPARATE) !== -1){
-            let dataIdArr = dataId.split(X9SaveAndShareData.SEPARATE);
-            dataId = dataIdArr[0];
-            uuid = dataIdArr[1];
-        }
-        return [dataId, uuid];
-    },
- 
-    _validateId(id){        
-        // Do not encript uri by Hash
-        return SAVEANDSHARE_URI + (id ? id : (this.constructor.name + X9SaveAndShareData.SEPARATE + this.uuid));
-    },
-
-    
-    _validateData(data, keyPass){
-        let dataObj = data ? data : this.getState();
-        return JSON.stringify(dataObj);
-    },
-
-    _getDataNode(){
-        var shareDataNode = cc.find(DATA_NODE_NAME);
-        // cc.log("state node:: " + shareDataNode)
-        if(!shareDataNode){            
-            shareDataNode = new cc.Node(DATA_NODE_NAME);
-            shareDataNode.name = DATA_NODE_NAME;
-            cc.game.addPersistRootNode(shareDataNode);
-            shareDataNode.addComponent = function(typeOrClassName) {
-                if(CC_EDITOR) {Editor.error("Không add bất cứ thứ gì vào node " + shareDataNode.name) }
-                else {throw new Error("Không add bất cứ thứ gì vào node " + shareDataNode.name);}
-                return null
-            }
-        }
-        return shareDataNode;
-    },
 
 })

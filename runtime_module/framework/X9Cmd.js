@@ -3,6 +3,7 @@ var Dispatcher = require("Dispatcher");
 var Command = require("Command");
 var Helper = require("X9Helper");
 var X9OrientedCommand = require("X9OrientedCommand");
+var X9LocalData = require("X9LocalData");
 /**
  * Class được sử dụng để khai báo command trong editor.
  * 
@@ -20,7 +21,7 @@ var X9OrientedCommand = require("X9OrientedCommand");
  */
 cc.Class({
     extends: cc.Component,
-    mixins: [Command, X9OrientedCommand],
+    mixins: [Command, X9OrientedCommand, X9LocalData],
 
     properties:{
         isGlobal: {
@@ -38,7 +39,6 @@ cc.Class({
      * 
      */
     onLoad(){
-
         if(this.node){   
             this.setDispatcher(Helper.findNearbyDispatcher(this.node));
             if(this.isGlobal){
