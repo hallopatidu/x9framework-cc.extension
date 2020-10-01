@@ -48,8 +48,8 @@ var X9AutoReduceStyle = cc.Class({
     //--------- State Deep Comparing ------------
 
     /**
-     * Nếu true, bắt buộc phải có sự thay đổi mỗi lần command gửi đến.
-     * @param {Boolean} value 
+     * 
+     * @param {*} value 
      */
     applyStateDeepComparing(value){
         this._deepCompare = value;
@@ -71,9 +71,6 @@ var X9AutoReduceStyle = cc.Class({
         }
     },
 
-    /**
-     * 
-     */
     getStateType(){
         let state = this.getState();
         return state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
@@ -82,7 +79,6 @@ var X9AutoReduceStyle = cc.Class({
     //----------- OVERRIDE ------------------------
     // 
     //---------------------------------------------
-
     /**
      * 
      * @param {*} state 
@@ -111,10 +107,16 @@ var X9AutoReduceStyle = cc.Class({
     onChange(newState){
         if(this instanceof cc.Component){
             if(newState) {
+                //
                 let stateType = newState[X9OrientedCommand.TYPE_ARG];
                 this.onUpdateState(newState);
-                if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){                    
-                    this._excuteViewTasks(stateType, this.onUpdateView.bind(this));
+                if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){
+                    this._excuteViewTasks(stateType, ()=>{
+                        // ket thuc xu ly view
+                        delete newState[X9OrientedCommand.TYPE_ARG];
+                        delete newState[X9OrientedCommand.CLASS_ARG];
+                        CC_DEBUG && cc.log('End Task View')
+                    });
                 }
             }
         }else{
@@ -137,7 +139,6 @@ var X9AutoReduceStyle = cc.Class({
     },
 
     //--------- State Deep Comparing ------------
-
     /**
      * 
      * @param {*} lastState 
@@ -162,6 +163,7 @@ var X9AutoReduceStyle = cc.Class({
     //  PRIVATE FUNCTION
     //----------------------------------
 
+    //----------private command --------------------
     /**
      * 
      * @param {*} payload 
@@ -182,22 +184,12 @@ var X9AutoReduceStyle = cc.Class({
     // Render view theo thứ tự
     //-----------------------------------------------------------
     
-    /**
-     * 
-     * @param {*} cmdType 
-     */
     allowAsyncViewWithCMD(cmdType){
-        if( this._asyncViewCmds && this._asyncViewCmds.indexOf(cmdType) == -1){            
+        if(this._asyncViewCmds && this._asyncViewCmds.indexOf(cmdType) == -1){            
             this._asyncViewCmds.push(cmdType);
         }
     },
 
-
-    /**
-     * 
-     * @param {*} cmdType 
-     * @param  {...any} args 
-     */
     sequence(cmdType, ...args){        
         var taskView = [];
         for (let index = 0; index < args.length; index++) {
@@ -233,10 +225,11 @@ var X9AutoReduceStyle = cc.Class({
                 if(asyncTasks.indexOf(this) == -1 && asyncTasks.indexOf(this.constructor.name) == -1){
                     asyncTasks.push(this);
                 }
+                asyncTasks.push(endTask);
                 asyncTasks.reduce( (accumulatorPromise, nextID) => {  
                     return accumulatorPromise.then(() => {
                         return ((x9CompName)=>{
-                            const x9Comp = (x9CompName === this) ? x9CompName : this.use(x9CompName);
+                            const x9Comp = (x9CompName === this) ? x9CompName : ( (typeof(x9CompName) !== 'function') ? this.use(x9CompName) : null );
                             return new Promise((resolve, reject) => {
                                 if(x9Comp && x9Comp.onUpdateView){
                                     x9Comp.onUpdateView(resolve);
@@ -248,13 +241,24 @@ var X9AutoReduceStyle = cc.Class({
                     });
                 }, Promise.resolve());
         }else{
-            endTask(()=>{ cc.log('excute task')});
+            this.onUpdateView(endTask);            
         }
         // 
     },
 
-    //--------------------------------------------
+    // methodThatReturnsAPromise(x9CompName) {
+    //     let x9Comp = this.use(x9CompName);
+    //     return new Promise((resolve, reject) => {
+    //         if(x9Comp.onUpdateView){
+    //             x9Comp.onUpdateView(resolve);
+    //         }else{
+    //             resolve();
+    //         }
+    //     });
+    // },
 
+    //--------------------------------------------
+    
     /**
      * 
      * @param {*} newState 
@@ -264,7 +268,7 @@ var X9AutoReduceStyle = cc.Class({
     },    
     
     /**
-     * Hàm gọi khi cập nhật data vào view.
+     * Hàm gọi ra khi mỗi lần có cmd pass qua các bước lọc allowCommandTypes > onPublic/onPrivate Command > onUpdateView
      * 
      * @param {String} stateType 
      */
