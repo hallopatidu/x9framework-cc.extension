@@ -1,4 +1,4 @@
-var Dispatcher = require('Dispatcher');
+var Dispatcher = require('X9Dispatcher');
 
 var Helper = {
     DISPATCHER_ARG : '__dispatcher__',

@@ -2,7 +2,7 @@
 const Dispatcher = require('Dispatcher');
 
 
-var X9Dispatcher = cc.Class({
+const X9Dispatcher = cc.Class({
     extends: Dispatcher,
     statics:{
         __instance: null,
@@ -16,32 +16,16 @@ var X9Dispatcher = cc.Class({
         }
     },
 
-    continue(){
-        
+    dispatch(payload) {
+        if(this._isDispatching){
+            if(!this.__payloadQueue){
+                this.__payloadQueue = [];
+            }
+            this.__payloadQueue.push(payload);
+        }else{
+            this._super(payload)
+        }
     },
-
-     /**
-     * Call the callback stored with the given id. Also do some internal
-     * bookkeeping.
-     *
-     * @internal
-     */
-    // _invokeCallback(id) {
-    //     this._isPending[id] = true;
-    //     // thay the bang chuoi promise 
-    //     this._callbacks[id](this._pendingPayload);
-    //     // 
-    //     this._isHandled[id] = true;
-    // },
-
-     /**
-     * Set up bookkeeping needed when dispatching.
-     *
-     * @internal
-     */
-    // _startDispatching(payload) {
-    //     this._super(payload);
-    // },
 
     /**
      * Clear bookkeeping used for dispatching.
@@ -51,9 +35,13 @@ var X9Dispatcher = cc.Class({
     _stopDispatching() {
         // 
         this._super();
-
+        if(this.__payloadQueue && this.__payloadQueue.length){
+            let payload = this.__payloadQueue.shift();
+            this.dispatch(payload);
+        }else{
+            delete this.__payloadQueue;
+        }
     }
 
-    // cap nhat data truoc
 
  })

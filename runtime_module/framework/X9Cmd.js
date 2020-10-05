@@ -1,5 +1,5 @@
 
-var Dispatcher = require("Dispatcher");
+var Dispatcher = require("X9Dispatcher");
 var Command = require("Command");
 var Helper = require("X9Helper");
 var X9OrientedCommand = require("X9OrientedCommand");

@@ -1,4 +1,4 @@
-const Dispatcher = require("Dispatcher");
+const Dispatcher = require("X9Dispatcher");
 const ReduceStore = require("ReduceStore");
 const Command = require("Command");
 const X9Command = require("X9Cmd");
