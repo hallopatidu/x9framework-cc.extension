@@ -2,25 +2,34 @@ var Dispatcher = require('X9Dispatcher');
 
 var Helper = {
     DISPATCHER_ARG : '__dispatcher__',
-
-    getAllComponents(node, condition){        
+    /**
+     * 
+     * @param {*} node 
+     * @param {*} componentCondition 
+     * @param {Function} nodeCondition function(){return -1|0|1}. 
+     * -1 không tìm kiếm component tại node nay và không tìm kiếm tại node con
+     * 0 không tìm kiếm tại node này vẫn tìm kiếm tại node con.
+     * 1 Tìm kiếm tại node này và cả node con.
+     */
+    getAllComponents(node, componentCondition, nodeCondition){        
         let components = [] ;
-        if(node._components && node._components.length){
+        let isNodeVerify = nodeCondition ? nodeCondition(node) : 1  ;
+        if(node._components && node._components.length && isNodeVerify > 0){
             let clength = node._components.length;
             let i = 0;
             while(i < clength){                
                 let compElement = node._components[i++]
-                if(condition && !condition(compElement)){
+                if(componentCondition && !componentCondition(compElement)){
                     continue;
                 }
                 components.push(compElement);
             }
         }
 
-        if(node.childrenCount > 0){
+        if(node.childrenCount > 0 && isNodeVerify > -1){
             let j = 0;
             while(j < node.childrenCount){
-                components = components.concat(this.getAllComponents(node.children[j], condition));
+                components = components.concat(this.getAllComponents(node.children[j], componentCondition, nodeCondition));
                 j++;
             }    
         }
