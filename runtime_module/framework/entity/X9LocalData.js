@@ -30,7 +30,8 @@ const X9LocalData = cc.Class({
         if(uuid && data){
             data = data[uuid]
             if(!data){
-                return this.getData(dataId.replace(SAVEANDSHARE_URI,''));
+                let classDataId = dataId.replace(SAVEANDSHARE_URI,'');
+                return (classDataId != id) ? this.getData(classDataId) : null;
             }
         }else if(data && typeof data === 'object'){
             let keys = Object.keys(data);
@@ -53,14 +54,14 @@ const X9LocalData = cc.Class({
             dataId = dataIdArr[0];
             uuid = dataIdArr[1];
         }
-        return [dataId, uuid];
+        return [dataId, uuid]; 
     },
  
     _validateId(id){        
         // Do not encript uri by Hash
-        return SAVEANDSHARE_URI + (id ? id : (this.constructor.name + X9LocalData.SEPARATE + this.uuid));
+        let className = this.__className || cc.js.getClassName(this.constructor);
+        return SAVEANDSHARE_URI + (id ? id : (className + X9LocalData.SEPARATE + this.uuid));
     },
-
     
     _validateData(data, keyPass){
         let dataObj = data ? data : this.getState();
@@ -68,6 +69,7 @@ const X9LocalData = cc.Class({
     },
 
     _getDataNode(){
+        // if(!this._shareDataNode){
         var shareDataNode = cc.find(DATA_NODE_NAME);
         // cc.log("state node:: " + shareDataNode)
         if(!shareDataNode){            
@@ -80,7 +82,10 @@ const X9LocalData = cc.Class({
                 return null
             }
         }
-        return shareDataNode;
+        // this._shareDataNode = shareDataNode;
+        // }
+        // return this._shareDataNode;
+        return shareDataNode
     },
 
 })
