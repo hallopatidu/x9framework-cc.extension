@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-const X9OrientedCommand = require('X9OrientedCommand');
+ const X9OrientedCommand = require('X9OrientedCommand');
  
 /**
  * Code Template hỗ trợ một dạng sử dụng với X9 Framework.
@@ -80,7 +80,7 @@ var X9AutoReduceStyle = cc.Class({
 
     getError(){
         let state = this.getState();
-        return state[X9OrientedCommand.ERROR_ARG];
+        return state[X9OrientedCommand.ERROR_ARG] ? state[X9OrientedCommand.ERROR_ARG] : null;
     },
 
     export(){
@@ -154,9 +154,8 @@ var X9AutoReduceStyle = cc.Class({
                 if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){
                     this._excuteViewTasks(stateType, ()=>{
                         // ket thuc xu ly view
-                        delete newState[X9OrientedCommand.TYPE_ARG];
-                        delete newState[X9OrientedCommand.CLASS_ARG];                        
-                        CC_DEBUG && cc.log('End Task View');
+                        this.clearThenEndUp();
+                        CC_DEBUG && cc.log('End Task View ' + (this.__className ? this.__className : this.constructor.name)); 
                     });
                 }
             }
@@ -206,6 +205,13 @@ var X9AutoReduceStyle = cc.Class({
     //----------------------------------
 
     //----------private command --------------------
+
+    clearThenEndUp(){
+        let state = this.getState();
+        delete state[X9OrientedCommand.TYPE_ARG];
+        delete state[X9OrientedCommand.CLASS_ARG]; 
+        delete state[X9OrientedCommand.ERROR_ARG];
+    },
 
     /**
      * 
@@ -264,9 +270,11 @@ var X9AutoReduceStyle = cc.Class({
                         return ((x9CompName)=>{
                             const x9Comp = (x9CompName === this) ? x9CompName : ( (typeof(x9CompName) !== 'function') ? this.use(x9CompName) : null );
                             return new Promise((resolve, reject) => {
-                                if(x9Comp && x9Comp.onUpdateView){
+                                if( x9Comp && x9Comp.onUpdateView && (x9Comp.getError() == null) ){
+                                    // Có lỗi không vào view nữa.
                                     x9Comp.onUpdateView(resolve);
                                 }else{
+                                    x9Comp.clearThenEndUp();
                                     resolve();
                                 }
                             });
@@ -274,7 +282,11 @@ var X9AutoReduceStyle = cc.Class({
                     });
                 }, Promise.resolve());
         }else{
-            this.onUpdateView(endTask);            
+            if(this.getError() == null){
+                this.onUpdateView(endTask);            
+            }else{
+                endTask();
+            }
         }
         // 
     },
@@ -286,7 +298,7 @@ var X9AutoReduceStyle = cc.Class({
     _prepareUpdatingState(newState){
         if(newState && newState[X9OrientedCommand.ERROR_ARG]){            
             let resolvedState = this.onPreUpdateState(newState);
-            delete newState[X9OrientedCommand.ERROR_ARG];
+            // delete newState[X9OrientedCommand.ERROR_ARG];
             return resolvedState && (typeof(resolvedState) === 'object') ? resolvedState : newState;
         }        
         return newState;

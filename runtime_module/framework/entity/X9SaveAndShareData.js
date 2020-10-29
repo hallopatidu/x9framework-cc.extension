@@ -15,6 +15,7 @@ const X9SaveAndShareData = cc.Class({
     ctor(){
         this._state = Object.create(null);
         this.encryptKey = null;
+        this._currenClassName = this.__className || this.constructor.name;
     },
 
     /**
@@ -73,6 +74,7 @@ const X9SaveAndShareData = cc.Class({
      * @param {*} data 
      */
     save(data){
+        let id = this.__className;
         let dataURIArr = this._splitDataIdToArray();// className::uuid        
         let dataId = dataURIArr[0];
         let saveData = data || this.getState();
@@ -101,7 +103,7 @@ const X9SaveAndShareData = cc.Class({
     sync(mergeAllSubClassData){
         let state = this.getState();
         if(mergeAllSubClassData){
-            let currentClass = cc.js.getClassByName(this.constructor.name);
+            let currentClass = cc.js.getClassByName(this.__className);
             let classChainList = [currentClass].concat(cc.Class.getInheritanceChain(currentClass));
             for (let index = 0; index < classChainList.length; index++) {
                 const klass = classChainList[index];

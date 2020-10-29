@@ -32,7 +32,7 @@ cc.Class({
     },
 
     test(){
-        cc.log(this.constructor.name + ":: test successful !");
+        cc.log(this.__className + ":: test successful !");
     },
 
     /**
@@ -55,7 +55,7 @@ cc.Class({
         var dispatchers = this.getDispatchers();
         if(dispatchers.indexOf(dispatcher) == -1){
             // cc.log("Check không trùng lặp dispatcher")
-            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.constructor.name + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : dispatchers.push(dispatcher);
+            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.__className + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : dispatchers.push(dispatcher);
         }
         // cc.log('Dispatchers Length :: ' + dispatchers.length);
     },
