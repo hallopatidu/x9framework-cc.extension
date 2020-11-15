@@ -56,6 +56,10 @@ var Helper = {
         return Dispatcher.instance();
     },
 
+    decodeBase64URL(){
+        
+    },
+
     editCCClass: function(manualOptionHandler, completedDefineClassHandler){
         if(!this.__edited){
             var newCCClass = (function(superCCClass){
@@ -90,7 +94,7 @@ Helper.editCCClass(function(options){
     let className = cc.js.getClassName(cls);
     if(!className) return;   
     if(options && options.extends && options.extends !== cc.Class && (typeof options.extends !== 'object') ){
-        let catalogName = '';
+        let catalogName;
         let superClass = options.extends;
         let X9Command = require("X9Cmd");
         let X9Component = require("X9Com");
@@ -100,14 +104,15 @@ Helper.editCCClass(function(options){
             }else if(cc.js.isChildClassOf(superClass, X9Command)){
                 catalogName = 'X9 Command';
             }
-            // Sửa lại nội dung của menu theo custome catalog.
-            let menuPath = catalogName + '/' + className;
-            cc._componentMenuItems.forEach(item => {            
-                if(item.component === cls){
-                    item.menuPath = menuPath;
-                }
-            });
-
+            if(catalogName){
+                // Sửa lại nội dung của menu theo custome catalog.
+                let menuPath = catalogName + '/' + className;
+                cc._componentMenuItems.forEach(item => {            
+                    if(item.component === cls){
+                        item.menuPath = menuPath;
+                    }
+                });
+            }
         }
     }
 });

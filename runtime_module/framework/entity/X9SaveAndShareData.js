@@ -77,7 +77,10 @@ const X9SaveAndShareData = cc.Class({
         let id = this.__className;
         let dataURIArr = this._splitDataIdToArray();// className::uuid        
         let dataId = dataURIArr[0];
-        let saveData = data || this.getState();
+        let saveData = data || Object.assign({},this.getState());
+        if(this._clearPrivateArgs){
+            this._clearPrivateArgs(saveData);
+        }
         let lastSave = cc.sys.localStorage.getItem(dataId);
         lastSave = lastSave ? JSON.parse(lastSave) : null;
         saveData = lastSave ? Object.assign(lastSave, saveData) : saveData;

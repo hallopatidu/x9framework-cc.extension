@@ -1,5 +1,5 @@
 
-const SAVEANDSHARE_URI = 'x9data://';
+const DATA_URI = 'x9data://';
 const DATA_NODE_NAME = 'share-data';
 /**
  * Tính năng save và share data cho X9Cmd và X9Com.
@@ -14,6 +14,7 @@ const X9LocalData = cc.Class({
     statics:{
         SEPARATE : '::',
     },
+    
 
     /**
      * Lấy share data trước. Nếu không có sẽ lấy vào từ localStorage.
@@ -30,7 +31,7 @@ const X9LocalData = cc.Class({
         if(uuid && data){
             data = data[uuid]
             if(!data){
-                let classDataId = dataId.replace(SAVEANDSHARE_URI,'');
+                let classDataId = dataId.replace(DATA_URI,'');
                 return (classDataId != id) ? this.getData(classDataId) : null;
             }
         }else if(data && typeof data === 'object'){
@@ -49,6 +50,7 @@ const X9LocalData = cc.Class({
     _splitDataIdToArray(id){
         let uuid = null;
         let dataId = this._validateId(id);
+            dataId = id ? dataId : (dataId + X9LocalData.SEPARATE + this.uuid) ;
         if(dataId.indexOf(X9LocalData.SEPARATE) !== -1){
             let dataIdArr = dataId.split(X9LocalData.SEPARATE);
             dataId = dataIdArr[0];
@@ -60,7 +62,7 @@ const X9LocalData = cc.Class({
     _validateId(id){        
         // Do not encript uri by Hash
         let className = this.__className || cc.js.getClassName(this.constructor);
-        return SAVEANDSHARE_URI + (id ? id : (className + X9LocalData.SEPARATE + this.uuid));
+        return DATA_URI + (id ? id : className);
     },
     
     _validateData(data, keyPass){

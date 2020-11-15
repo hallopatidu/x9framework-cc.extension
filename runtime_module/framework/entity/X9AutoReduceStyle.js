@@ -34,8 +34,7 @@ var X9AutoReduceStyle = cc.Class({
     mixins: [X9OrientedCommand],
 
     statics: {
-        TYPE_ARG: "__type__",
-        CLASS_ARG: "__class__",
+        STATE_ID_ARG: "__state_id__"
     },
 
     ctor(){
@@ -75,12 +74,17 @@ var X9AutoReduceStyle = cc.Class({
 
     getStateType(){
         let state = this.getState();
-        return state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
+        return state && state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
+    },
+
+    getStateId(){
+        let state = this.getState();
+        return state && state[X9AutoReduceStyle.STATE_ID_ARG] ? state[X9AutoReduceStyle.STATE_ID_ARG] : 1;
     },
 
     getError(){
         let state = this.getState();
-        return state[X9OrientedCommand.ERROR_ARG] ? state[X9OrientedCommand.ERROR_ARG] : null;
+        return state && state[X9OrientedCommand.ERROR_ARG] ? state[X9OrientedCommand.ERROR_ARG] : null;
     },
 
     export(){
@@ -125,6 +129,13 @@ var X9AutoReduceStyle = cc.Class({
                     }else{
                         newState = Object.assign(Object.create(null), state, mergedPayload);
                     }
+                    //
+                    // STATE_ID_ARG
+                    let stateId = this.getStateId();
+                    stateId++;
+                    stateId = (stateId == Number.MAX_SAFE_INTEGER) ? 1 : stateId;
+                    newState[X9AutoReduceStyle.STATE_ID_ARG] = stateId;
+                    //
                 }else{
                     newState = state;
                 }
@@ -135,7 +146,7 @@ var X9AutoReduceStyle = cc.Class({
                 return newState;
             }            
         }else{
-            throw new Error(this.__className + "::reduce(state, payload) : " +" Chỉ gọi trong Subclass của X9Com")
+            throw new Error(this.__className + "::reduce(state, payload) : " +" Chỉ gọi trong Subclass của X9Com");
         }
         return state;
     },
@@ -152,9 +163,9 @@ var X9AutoReduceStyle = cc.Class({
                 let stateType = newState[X9OrientedCommand.TYPE_ARG];
                 this._exportData = this.onUpdateState(this._prepareUpdatingState(newState));                
                 if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){
-                    this._excuteViewTasks(stateType, ()=>{
+                    this._excuteViewTasks(stateType, (stateId)=>{
                         // ket thuc xu ly view
-                        this.clearThenEndUp();
+                        this.clearThenEndUp(stateId);
                         CC_DEBUG && cc.log('End Task View ' + (this.__className ? this.__className : this.constructor.name)); 
                     });
                 }
@@ -200,17 +211,27 @@ var X9AutoReduceStyle = cc.Class({
         }
     },
 
+
+    clearThenEndUp(stateId){
+        let currentStateId = this.getStateId();
+        let state = this.getState();
+        if(stateId == currentStateId){
+            this._clearPrivateArgs(state);
+        }
+    },
+
     //----------------------------------
     //  PRIVATE FUNCTION
     //----------------------------------
 
     //----------private command --------------------
 
-    clearThenEndUp(){
-        let state = this.getState();
-        delete state[X9OrientedCommand.TYPE_ARG];
-        delete state[X9OrientedCommand.CLASS_ARG]; 
-        delete state[X9OrientedCommand.ERROR_ARG];
+    _clearPrivateArgs(state){
+        if(state){
+            delete state[X9OrientedCommand.TYPE_ARG];
+            delete state[X9OrientedCommand.CLASS_ARG];
+            delete state[X9OrientedCommand.ERROR_ARG];
+        }
     },
 
     /**
@@ -266,15 +287,17 @@ var X9AutoReduceStyle = cc.Class({
                 }
                 asyncTasks.push(endTask);
                 asyncTasks.reduce( (accumulatorPromise, nextID) => {  
-                    return accumulatorPromise.then(() => {
+                    return accumulatorPromise.then(() => {                        
                         return ((x9CompName)=>{
                             const x9Comp = (x9CompName === this) ? x9CompName : ( (typeof(x9CompName) !== 'function') ? this.use(x9CompName) : null );
+                            const x9CompStateId = x9Comp ? x9Comp.getStateId() : null;
                             return new Promise((resolve, reject) => {
                                 if( x9Comp && x9Comp.onUpdateView && (x9Comp.getError() == null) ){
                                     // Có lỗi không vào view nữa.
                                     x9Comp.onUpdateView(resolve);
+                                    x9Comp.clearThenEndUp(x9CompStateId);
                                 }else{
-                                    x9Comp.clearThenEndUp();
+                                    // endTask
                                     resolve();
                                 }
                             });
@@ -282,10 +305,13 @@ var X9AutoReduceStyle = cc.Class({
                     });
                 }, Promise.resolve());
         }else{
+            const lastStateId = this.getStateId();
             if(this.getError() == null){
-                this.onUpdateView(endTask);            
+                this.onUpdateView(()=>{                    
+                    endTask(lastStateId);
+                });
             }else{
-                endTask();
+                endTask(lastStateId);
             }
         }
         // 
@@ -345,19 +371,6 @@ var X9AutoReduceStyle = cc.Class({
         }
         this._asyncViewTasks[cmdType] = taskView;
     },
-
-    
-
-    // methodThatReturnsAPromise(x9CompName) {
-    //     let x9Comp = this.use(x9CompName);
-    //     return new Promise((resolve, reject) => {
-    //         if(x9Comp.onUpdateView){
-    //             x9Comp.onUpdateView(resolve);
-    //         }else{
-    //             resolve();
-    //         }
-    //     });
-    // },
 
     //--------------------------------------------\
 
