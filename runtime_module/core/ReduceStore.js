@@ -43,7 +43,7 @@ cc.Class({
         getInitialState() {
             // return abstractMethod('ReduceStore', 'getInitialState');
             try{             
-                throw new Error( this.constructor.name + ".getInitialState :: Cần có thủ tục khởi tạo State ban đầu.")
+                throw new Error( this.__className + ".getInitialState :: Cần có thủ tục khởi tạo State ban đầu.")
             }catch(error){
                 cc.error(error);
             }
@@ -57,7 +57,7 @@ cc.Class({
          */
         reduce(state, payload) {
             // return abstractMethod('ReduceStore', 'reduce');                       
-            throw new Error( this.constructor.name + ".reduce :: Override hàm này để có thủ tục reduce các trạng thái của Store.")            
+            throw new Error( this.__className + ".reduce :: Override hàm này để có thủ tục reduce các trạng thái của Store.")            
             return state;
         },
 
@@ -99,7 +99,7 @@ cc.Class({
             var endingState = this.reduce(startingState, payload);
         
             // This means your ending state should never be undefined.            
-            !(endingState !== undefined) ? CC_DEBUG ? cc.error(this.constructor.name + '.reduce(...) trả về giá trị chưa xác định, phải chăng đồng chí có quên trả về giá trị state trong trường hợp mặc định ? (nếu không thích trả về thì nên để là return null)') : cc.error(false) : undefined;
+            !(endingState !== undefined) ? CC_DEBUG ? cc.error(this.__className + '.reduce(...) trả về giá trị chưa xác định, phải chăng đồng chí có quên trả về giá trị state trong trường hợp mặc định ? (nếu không thích trả về thì nên để là return null)') : cc.error(false) : undefined;
         
             if (!this.areEqual(startingState, endingState)) {
               this._state = endingState;

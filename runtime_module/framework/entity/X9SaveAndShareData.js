@@ -1,6 +1,6 @@
 
-const SAVEANDSHARE_URI = 'x9data://';
-const DATA_NODE_NAME = 'share-data';
+const X9LocalData = require('X9LocalData');
+
 /**
  * Tính năng save và share data cho X9Cmd và X9Com.
  * Auto Save : tự động save data vào local stogare
@@ -8,12 +8,14 @@ const DATA_NODE_NAME = 'share-data';
  * Sẽ bổ sung tính năng encrypt dữ liệu sau.
  * 
  */
-cc.Class({
+const X9SaveAndShareData = cc.Class({
     extends: cc.Class,
-
+    mixins:[X9LocalData],
+    
     ctor(){
         this._state = Object.create(null);
         this.encryptKey = null;
+        this._currenClassName = this.__className || this.constructor.name;
     },
 
     /**
@@ -34,23 +36,64 @@ cc.Class({
      * @param {*} data 
      */
     share(data){
-        this._getDataNode()[this._validateId()] = this._validateData(data);
+        let dataURIArr = this._splitDataIdToArray();// className::uuid
+        let uuid = dataURIArr[1];
+        let dataId = dataURIArr[0];
+        let dataNode = this._getDataNode();      
+        if(uuid){
+            if(!dataNode[dataId]){
+                dataNode[dataId] = Object.create(null);
+            }
+            let nodeData = dataNode[dataId]; // class
+            nodeData[uuid] = Object.assign(nodeData[uuid] || Object.create(null), JSON.parse( JSON.stringify( data || this.getState() ) ) );
+        }else{
+            // hiem khi xay ra.
+            dataNode()[dataId] = JSON.parse( JSON.stringify(data || this.getState()) ) ;
+        }
     },
 
+    /**
+     * 
+     */
     unshare(){
-        this._getDataNode()[this._validateId()] = null;
+        let dataURIArr = this._splitDataIdToArray();// className::uuid
+        let uuid = dataURIArr[1];
+        let dataId = dataURIArr[0];
+        let nodeData = this._getDataNode()[dataId];
+        if(uuid && nodeData[uuid]){
+            nodeData[uuid] = null;
+        }else{
+            this._getDataNode()[dataId] = null;
+            delete this._getDataNode()[dataId];
+        }
     },
 
     /**
      * Truoc khi lưu vào storage, sẽ share data trước.
+     * Việc lưu vào storage sẽ lưu tổng hợp theo class.
      * @param {*} data 
      */
     save(data){
-        cc.sys.localStorage.setItem(this._validateId(), this._validateData(data));
+        let id = this.__className;
+        let dataURIArr = this._splitDataIdToArray();// className::uuid        
+        let dataId = dataURIArr[0];
+        let saveData = data || Object.assign({},this.getState());
+        if(this._clearPrivateArgs){
+            this._clearPrivateArgs(saveData);
+        }
+        let lastSave = cc.sys.localStorage.getItem(dataId);
+        lastSave = lastSave ? JSON.parse(lastSave) : null;
+        saveData = lastSave ? Object.assign(lastSave, saveData) : saveData;
+        cc.sys.localStorage.setItem(dataId, this._validateData(saveData));
     },
 
+    /**
+     * 
+     */
     unsave(){
-        cc.sys.localStorage.removeItem(this._validateId());
+        let dataURIArr = this._splitDataIdToArray();
+        let dataId = dataURIArr[0];
+        cc.sys.localStorage.removeItem(dataId);
     },
 
     /**
@@ -62,57 +105,36 @@ cc.Class({
      */
     sync(mergeAllSubClassData){
         let state = this.getState();
-        let currentClass = cc.js.getClassByName(this.constructor.name);
-        let classChainList = mergeAllSubClassData ? [currentClass].concat(cc.Class.getInheritanceChain(currentClass)) : [currentClass];
-        for (let index = 0; index < classChainList.length; index++) {
-            const klass = classChainList[index];
-            if(klass){
-                let className = cc.js.getClassName(klass);
-                let data = this.getData(className);
-                if(data){
-                    state = Object.assign(state, data);
+        if(mergeAllSubClassData){
+            let currentClass = cc.js.getClassByName(this.__className);
+            let classChainList = [currentClass].concat(cc.Class.getInheritanceChain(currentClass));
+            for (let index = 0; index < classChainList.length; index++) {
+                const klass = classChainList[index];
+                if(klass){
+                    let className = cc.js.getClassName(klass);
+                    let data = this._getDataNode()[className];
+                    if(data){
+                        // sync toan bo data[uuid] vao state.
+                        for (const uuid in data) {
+                            if (data.hasOwnProperty(uuid)) {
+                                const compData = data[uuid];
+                                if(compData){
+                                    state = Object.assign(state, compData);
+                                }
+                            }
+                        }
+                    }                    
                 }
-            }
+            }           
+
+        }else{
+            let data = this.getData();
+            // data = data && data[this.uuid] ? data[this.uuid] : data; 
+            state = data ? Object.assign(state, data) : state;            
         }
+
         this._state = state;
     },
 
-    /**
-     * Lấy share data trước. Nếu không có sẽ lấy vào từ localStorage.
-     * @param {String} id // X9 component class name
-     */
-    getData(id){        
-        // Tim share data truoc.
-        let dataId = this._validateId(id);
-        let data = this._getDataNode()[dataId];
-        // Khong co moi lay tu storage
-        data = data ? data : cc.sys.localStorage.getItem(dataId);
-        return data;
-    },
- 
-    _validateId(id){
-        return SAVEANDSHARE_URI + (id ? id : this.constructor.name);
-    },
-
-    
-    _validateData(data, keyPass){
-        return data ? data : JSON.stringify(this.getState());
-    },
-
-    _getDataNode(){
-        var shareDataNode = cc.find(DATA_NODE_NAME);
-        // cc.log("state node:: " + shareDataNode)
-        if(!shareDataNode){            
-            shareDataNode = new cc.Node(DATA_NODE_NAME);
-            shareDataNode.name = DATA_NODE_NAME;
-            cc.game.addPersistRootNode(shareDataNode);
-            shareDataNode.addComponent = function(typeOrClassName) {
-                if(CC_EDITOR) {Editor.error("Không add bất cứ thứ gì vào node " + shareDataNode.name) }
-                else {throw new Error("Không add bất cứ thứ gì vào node " + shareDataNode.name);}
-                return null
-            }
-        }
-        return shareDataNode;
-    },
 
 })

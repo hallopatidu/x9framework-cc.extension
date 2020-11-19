@@ -16,7 +16,7 @@ cc.Class({
     },
 
     ctor(){
-        // cc.log(this.constructor.name + "::UUID : " + this.uuid);
+        // cc.log(this.__className + "::UUID : " + this.uuid);
     },
     
     /**
@@ -34,7 +34,7 @@ cc.Class({
      * @param {*} dispatcher 
      */
     setDispatcher(dispatcher){
-        !(dispatcher && dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.constructor.name + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : this.getDispatchers().push(dispatcher);        
+        !(dispatcher && dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.__className + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : this.getDispatchers().push(dispatcher);        
     },
 
     /**

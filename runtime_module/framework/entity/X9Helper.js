@@ -1,26 +1,35 @@
-var Dispatcher = require('Dispatcher');
+var Dispatcher = require('X9Dispatcher');
 
 var Helper = {
     DISPATCHER_ARG : '__dispatcher__',
-
-    getAllComponents(node, condition){        
+    /**
+     * 
+     * @param {*} node 
+     * @param {*} componentCondition 
+     * @param {Function} nodeCondition function(){return -1|0|1}. 
+     * -1 không tìm kiếm component tại node nay và không tìm kiếm tại node con
+     * 0 không tìm kiếm tại node này vẫn tìm kiếm tại node con.
+     * 1 Tìm kiếm tại node này và cả node con.
+     */
+    getAllComponents(node, componentCondition, nodeCondition){        
         let components = [] ;
-        if(node._components && node._components.length){
+        let isNodeVerify = nodeCondition ? nodeCondition(node) : 1  ;
+        if(node._components && node._components.length && isNodeVerify > 0){
             let clength = node._components.length;
             let i = 0;
             while(i < clength){                
                 let compElement = node._components[i++]
-                if(condition && !condition(compElement)){
+                if(componentCondition && !componentCondition(compElement)){
                     continue;
                 }
                 components.push(compElement);
             }
         }
 
-        if(node.childrenCount > 0){
+        if(node.childrenCount > 0 && isNodeVerify > -1){
             let j = 0;
             while(j < node.childrenCount){
-                components = components.concat(this.getAllComponents(node.children[j], condition));
+                components = components.concat(this.getAllComponents(node.children[j], componentCondition, nodeCondition));
                 j++;
             }    
         }
@@ -45,6 +54,10 @@ var Helper = {
             }
         }
         return Dispatcher.instance();
+    },
+
+    decodeBase64URL(){
+        
     },
 
     editCCClass: function(manualOptionHandler, completedDefineClassHandler){
@@ -81,7 +94,7 @@ Helper.editCCClass(function(options){
     let className = cc.js.getClassName(cls);
     if(!className) return;   
     if(options && options.extends && options.extends !== cc.Class && (typeof options.extends !== 'object') ){
-        let catalogName = '';
+        let catalogName;
         let superClass = options.extends;
         let X9Command = require("X9Cmd");
         let X9Component = require("X9Com");
@@ -91,14 +104,15 @@ Helper.editCCClass(function(options){
             }else if(cc.js.isChildClassOf(superClass, X9Command)){
                 catalogName = 'X9 Command';
             }
-            // Sửa lại nội dung của menu theo custome catalog.
-            let menuPath = catalogName + '/' + className;
-            cc._componentMenuItems.forEach(item => {            
-                if(item.component === cls){
-                    item.menuPath = menuPath;
-                }
-            });
-
+            if(catalogName){
+                // Sửa lại nội dung của menu theo custome catalog.
+                let menuPath = catalogName + '/' + className;
+                cc._componentMenuItems.forEach(item => {            
+                    if(item.component === cls){
+                        item.menuPath = menuPath;
+                    }
+                });
+            }
         }
     }
 });

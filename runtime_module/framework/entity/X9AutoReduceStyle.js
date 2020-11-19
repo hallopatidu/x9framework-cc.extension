@@ -34,16 +34,15 @@ var X9AutoReduceStyle = cc.Class({
     mixins: [X9OrientedCommand],
 
     statics: {
-        TYPE_ARG: "__type__",
-        CLASS_ARG: "__class__",
+        STATE_ID_ARG: "__state_id__"
     },
 
     ctor(){
         this._applyToSubclass = true;
         this._lastState = null;
-
-
         this._asyncViewCmds = [];
+        this._exportData = null;
+        this._exportError = null;
         this._asyncViewTasks = Object.create(null);
     },
 
@@ -69,38 +68,89 @@ var X9AutoReduceStyle = cc.Class({
         if(this instanceof cc.Component){
             this._applyToSubclass = trueOrFalse
         }else{
-            throw new Error(this.constructor.name + "::applyPrivateCommandToSubclass(trueOrFalse) : " +" Chỉ gọi trong Subclass của X9Com")
+            throw new Error(this.__className + "::applyPrivateCommandToSubclass(trueOrFalse) : " +" Chỉ gọi trong Subclass của X9Com")
         }
     },
 
     getStateType(){
         let state = this.getState();
-        return state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
+        return state && state[X9OrientedCommand.TYPE_ARG] ? state[X9OrientedCommand.TYPE_ARG] : 'default';
     },
 
+    getStateId(){
+        let state = this.getState();
+        return state && state[X9AutoReduceStyle.STATE_ID_ARG] ? state[X9AutoReduceStyle.STATE_ID_ARG] : 1;
+    },
+
+    getError(){
+        let state = this.getState();
+        return state && state[X9OrientedCommand.ERROR_ARG] ? state[X9OrientedCommand.ERROR_ARG] : null;
+    },
+
+    export(){
+        let exportData = this._exportData && (typeof(this._exportData) === 'object') ? this._exportData : null;
+        if(this._exportError){
+            exportData = exportData ? exportData : Object.create(null);
+        }
+        if(exportData) {
+            exportData[X9OrientedCommand.ERROR_ARG] = this._exportError ? this._exportError : null;        
+        }
+        return exportData;
+    },
+
+    exportError(errorId, message){
+        this._exportError = Object.create(null);
+        this._exportError.id = errorId;
+        this._exportError.msg = message;
+    },
+    
     //----------- OVERRIDE ------------------------
     // 
     //---------------------------------------------
+
     /**
      * 
      * @param {*} state 
      * @param {*} payload 
      */
-    reduce(state, payload){
+    reduce(state, payload){        
         if(this instanceof cc.Component){
             if(!payload) return state;
             if(payload[X9OrientedCommand.CLASS_ARG] && !this._isPrivateForThis(payload)){
                 return state;
             }else{
                 // let newState = (this.allowCommandTypes().indexOf(payload[X9OrientedCommand.TYPE_ARG]) !== -1)  ? Object.assign(Object.create(null), state, payload) : state;
-                let newState = (this.allowCommandTypes().indexOf(payload[X9OrientedCommand.TYPE_ARG]) !== -1)  ? this._deepCompare ? Object.assign(state, payload) : Object.assign(Object.create(null), state, payload) : state;
+                // let newState = (this.allowCommandTypes().indexOf(payload[X9OrientedCommand.TYPE_ARG]) !== -1)  ? this._deepCompare ? Object.assign(state, payload) : Object.assign(Object.create(null), state, payload) : state;
+                let newState;
+                if(this.allowCommandTypes().indexOf(payload[X9OrientedCommand.TYPE_ARG]) !== -1){                    
+                    let mergedPayload = this._mergeExportDataToPayload(payload);
+                    if(this._deepCompare){
+                        newState = Object.assign(state, mergedPayload);
+                    }else{
+                        newState = Object.assign(Object.create(null), state, mergedPayload);
+                    }
+                    //
+                    // STATE_ID_ARG
+                    let stateId = this.getStateId();
+                    stateId++;
+                    stateId = (stateId == Number.MAX_SAFE_INTEGER) ? 1 : stateId;
+                    newState[X9AutoReduceStyle.STATE_ID_ARG] = stateId;
+                    //
+                }else{
+                    newState = state;
+                }
+                // Xóa data export để cập nhật data mới.
+                this._exportData = null;
+                this._exportError = null;
+                // 
                 return newState;
             }            
         }else{
-            throw new Error(this.constructor.name + "::reduce(state, payload) : " +" Chỉ gọi trong Subclass của X9Com")
+            throw new Error(this.__className + "::reduce(state, payload) : " +" Chỉ gọi trong Subclass của X9Com");
         }
         return state;
     },
+
 
     /**
      * 
@@ -108,28 +158,20 @@ var X9AutoReduceStyle = cc.Class({
      */
     onChange(newState){
         if(this instanceof cc.Component){
-            // override 
-            // let stateType = newState[X9OrientedCommand.TYPE_ARG]
-            // if(newState && (this.allowCommandTypes().indexOf(stateType) != -1)) {
             if(newState) {
                 //
                 let stateType = newState[X9OrientedCommand.TYPE_ARG];
-                this.onUpdateState(newState);
-                if( this._asyncViewCmds.indexOf(stateType) == -1){
-                    this._excuteViewTasks(stateType, this.onUpdateView.bind(this));
+                this._exportData = this.onUpdateState(this._prepareUpdatingState(newState));                
+                if( this._asyncViewCmds && this._asyncViewCmds.indexOf(stateType) == -1){
+                    this._excuteViewTasks(stateType, (stateId)=>{
+                        // ket thuc xu ly view
+                        this.clearThenEndUp(stateId);
+                        CC_DEBUG && cc.log('End Task View ' + (this.__className ? this.__className : this.constructor.name)); 
+                    });
                 }
-                //
-                // let isPrivateCommand = this._isPrivateForThis(newState)
-                // // xoa cac class arg điều hướng.                
-                // delete newState[X9OrientedCommand.CLASS_ARG];
-                // // Phân luông gửi command.
-                // if(isPrivateCommand ? this.onPrivateCommand(newState) : this.onPublicCommand(newState)){
-                //     this.onUpdateView();
-                // }
-                // 
             }
         }else{
-            throw new Error(this.constructor.name + "::onChange(newState) : " +" Chỉ gọi trong Subclass của X9 Components")
+            throw new Error(this.__className + "::onChange(newState) : " +" Chỉ gọi trong Subclass của X9 Components")
         }
     },
 
@@ -142,12 +184,13 @@ var X9AutoReduceStyle = cc.Class({
         if(this instanceof cc.Component){
             return ['default'];
         }else{
-            throw new Error(this.constructor.name + "::allowCommandTypes() : " +" Chỉ gọi trong Subclass của X9Com");
+            throw new Error(this.__className + "::allowCommandTypes() : " +" Chỉ gọi trong Subclass của X9Com");
         }
         return null;
     },
 
     //--------- State Deep Comparing ------------
+
     /**
      * 
      * @param {*} lastState 
@@ -168,47 +211,154 @@ var X9AutoReduceStyle = cc.Class({
         }
     },
 
+
+    clearThenEndUp(stateId){
+        let currentStateId = this.getStateId();
+        let state = this.getState();
+        if(stateId == currentStateId){
+            this._clearPrivateArgs(state);
+        }
+    },
+
     //----------------------------------
     //  PRIVATE FUNCTION
     //----------------------------------
 
     //----------private command --------------------
+
+    _clearPrivateArgs(state){
+        if(state){
+            delete state[X9OrientedCommand.TYPE_ARG];
+            delete state[X9OrientedCommand.CLASS_ARG];
+            delete state[X9OrientedCommand.ERROR_ARG];
+        }
+    },
+
     /**
      * 
      * @param {*} payload 
      */
     _isPrivateForThis(payload){        
         if(payload && payload[X9OrientedCommand.CLASS_ARG]){
-            let isTheSameClass = (payload[X9OrientedCommand.CLASS_ARG] == this.constructor.name);
+            let isTheSameClass = (payload[X9OrientedCommand.CLASS_ARG] == this.__className);
             if(isTheSameClass) return true;
             let targetClass = cc.js.getClassByName(payload[X9OrientedCommand.CLASS_ARG]);
             if(!targetClass || !this._applyToSubclass) return false;
-            let currentClass = cc.js.getClassByName(this.constructor.name);                        
+            let currentClass = cc.js.getClassByName(this.__className);                        
             return cc.js.isChildClassOf(currentClass, targetClass);
         }
         return false;
     },
 
+    /**
+     * Đồng bộ các exported data từ các component được use.
+     * Nếu component được used không có export data thì bỏ qua.
+     * Công việc này điều khiển luồng dữ liệu theo thứ tự xử lý dữ liệu của các x9Comp được use.
+     * @param {*} payload 
+     */
+    _mergeExportDataToPayload(payload){
+        if(this._waitIds && this._waitIds.length){
+            let mergedPayload = payload;
+            this._waitIds.forEach(token => {
+                if(this._getUsedComponentByToken){
+                    let comp = this._getUsedComponentByToken(token);
+                    if(comp){
+                        let exportData = comp.export();
+                        mergedPayload = exportData ? Object.assign(mergedPayload, exportData) : mergedPayload;
+                    }
+                }
+            });
+            return mergedPayload;
+        }
+        return payload
+    },
+
+    /**
+     * 
+     * @param {*} cmdType 
+     * @param {*} endTask 
+     */
+    _excuteViewTasks(cmdType, endTask){
+        if(this._asyncViewTasks && this._asyncViewTasks[cmdType] && this._asyncViewTasks[cmdType].length){
+            // 
+            let asyncTasks = this._asyncViewTasks[cmdType].slice();
+                if(asyncTasks.indexOf(this) == -1 && asyncTasks.indexOf(this.__className) == -1){
+                    asyncTasks.push(this);
+                }
+                asyncTasks.push(endTask);
+                asyncTasks.reduce( (accumulatorPromise, nextID) => {  
+                    return accumulatorPromise.then(() => {                        
+                        return ((x9CompName)=>{
+                            const x9Comp = (x9CompName === this) ? x9CompName : ( (typeof(x9CompName) !== 'function') ? this.use(x9CompName) : null );
+                            const x9CompStateId = x9Comp ? x9Comp.getStateId() : null;
+                            return new Promise((resolve, reject) => {
+                                if( x9Comp && x9Comp.onUpdateView && (x9Comp.getError() == null) ){
+                                    // Có lỗi không vào view nữa.
+                                    x9Comp.onUpdateView(resolve);
+                                    x9Comp.clearThenEndUp(x9CompStateId);
+                                }else{
+                                    // endTask
+                                    resolve();
+                                }
+                            });
+                        })(nextID);
+                    });
+                }, Promise.resolve());
+        }else{
+            const lastStateId = this.getStateId();
+            if(this.getError() == null){
+                this.onUpdateView(()=>{                    
+                    endTask(lastStateId);
+                });
+            }else{
+                endTask(lastStateId);
+            }
+        }
+        // 
+    },
+
+    /**
+     * Xử lý các State được báo lỗi.
+     * @param {*} newState 
+     */
+    _prepareUpdatingState(newState){
+        if(newState && newState[X9OrientedCommand.ERROR_ARG]){            
+            let resolvedState = this.onPreUpdateState(newState);
+            // delete newState[X9OrientedCommand.ERROR_ARG];
+            return resolvedState && (typeof(resolvedState) === 'object') ? resolvedState : newState;
+        }        
+        return newState;
+    },
+  
     //------------------ Sequence View Updating--------------------------
     // Render view theo thứ tự
     //-----------------------------------------------------------
     
+    /**
+     * 
+     * @param {*} cmdType 
+     */
     allowAsyncViewWithCMD(cmdType){
-        if(this._asyncViewCmds.indexOf(cmdType) == -1){            
+        if(this._asyncViewCmds && this._asyncViewCmds.indexOf(cmdType) == -1){            
             this._asyncViewCmds.push(cmdType);
         }
     },
 
+    /**
+     * 
+     * @param {*} cmdType 
+     * @param  {...any} args 
+     */
     sequence(cmdType, ...args){        
         var taskView = [];
         for (let index = 0; index < args.length; index++) {
             let x9CompName = args[index];
             let x9Comp = this.use(x9CompName);
             // Đăng ký update view theo thứ tự sau khi data trả về từ cmd.
-            if(x9Comp && (x9CompName != this.constructor.name)){
+            if(x9Comp && (x9CompName != this.__className)){
                 if(x9Comp.onUpdateView){            
                     x9Comp.allowAsyncViewWithCMD(cmdType);
-                    if((taskView.indexOf(x9CompName) == -1) /* && (x9CompName != this.constructor.name) */){
+                    if((taskView.indexOf(x9CompName) == -1) /* && (x9CompName != this.__className) */){
                         taskView.push(x9CompName);
                     }
                 }else{
@@ -222,69 +372,26 @@ var X9AutoReduceStyle = cc.Class({
         this._asyncViewTasks[cmdType] = taskView;
     },
 
-    _excuteViewTasks(cmdType, endTask){
-        if(this._asyncViewTasks && this._asyncViewTasks[cmdType] && this._asyncViewTasks[cmdType].length){            
-            let asyncTasks = this._asyncViewTasks[cmdType].slice(); 
-                // asyncTasks.push(this.constructor.name);
-                asyncTasks.reduce( (accumulatorPromise, nextID) => {  
-                    return accumulatorPromise.then(() => {
-                        return ((x9CompName)=>{
-                            const x9Comp = this.use(x9CompName);
-                            return new Promise((resolve, reject) => {
-                                if(x9Comp && x9Comp.onUpdateView){
-                                    x9Comp.onUpdateView(resolve);
-                                }else{
-                                    resolve();
-                                }
-                            });
-                        })(nextID);
-                    });
-                }, Promise.resolve());
-        }
-        // else{
-        //     endTask(()=>{ cc.log('excute task')});
-        // }
-        endTask(()=>{ 
-            // cc.log('excute task')
-        });
-    },
+    //--------------------------------------------\
 
-    // methodThatReturnsAPromise(x9CompName) {
-    //     let x9Comp = this.use(x9CompName);
-    //     return new Promise((resolve, reject) => {
-    //         if(x9Comp.onUpdateView){
-    //             x9Comp.onUpdateView(resolve);
-    //         }else{
-    //             resolve();
-    //         }
-    //     });
-    // },
-
-    //--------------------------------------------
-
-    /**
-     * Sử dụng hàm onPrivateCommand để xử lý riêng với các cmd chỉ đến trực tiếp mà không bắn public tới các X9 Component khác.
-     * Nếu trả về false sẽ không gọi hàm onUpdateView
+     /**
+     * Luồng gọi trước onUpdateState. Nhiệm vụ là bắt các error và warning. Fixed state data và trả về state data đã được fixed.
+     * Nếu ko trả về hoặc trả về null thì sẽ không gọi vào onUpdateState.
      * @param {*} newState 
      */
-    // onPrivateCommand(newState){
-    //     return true;
-    // },
-
-    /**
-     * Sử dụng hàm onPublicCommand để xử lý các cmd dạng public.
-     * Những lúc chỉ cần cập nhật dữ liệu sau đó không càn render lại UI thì trả về false, 
-     * lúc đó sẽ không gọi hàm onUpdateView
-     * @param {*} newState 
-     */
-    // onPublicCommand(newState){
-    //     return true;
-    // },
-
-    onUpdateState(newState){
-        return true;
-    },    
+    onPreUpdateState(newState){
+        return newState;
+    },  
     
+    /**
+     * 
+     * @param {*} savedState  // State mới sau khi được merge payload và đã được xử lý khi có lỗi tại onPreUpdateState.
+     */
+    onUpdateState(savedState){
+        return true;
+    },
+    
+       
     /**
      * Hàm gọi ra khi mỗi lần có cmd pass qua các bước lọc allowCommandTypes > onPublic/onPrivate Command > onUpdateView
      * 

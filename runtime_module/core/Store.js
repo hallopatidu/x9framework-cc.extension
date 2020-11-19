@@ -12,14 +12,14 @@ cc.Class({
     //  Life Circle
     //------------------
     ctor(){        
-        this.__className = this.constructor.name;
+        this.__className = this.__className;
     },
 
     /**
      * 
      */
     onInit(){        
-        cc.error(this.constructor.name + ".onInit(): Cần override trong sử dụng hàm này.")
+        cc.error(this.__className + ".onInit(): Cần override trong sử dụng hàm này.")
     },
 
     /**
@@ -27,7 +27,7 @@ cc.Class({
      */
     onRemove(){
         if(this.__dispatcher && this._dispatchToken){
-            cc.log('Unregister Dispatcher ' + this.constructor.name)
+            cc.log('Unregister Dispatcher ' + this.__className)
             this.__dispatcher.unregister(this._dispatchToken);            
         } 
         this.__dispatcher = null;
@@ -56,10 +56,10 @@ cc.Class({
     setDispatcher(dispatcher, isForce){
         // 
         if(dispatcher){
-            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.constructor.name + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : undefined;
+            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.__className + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : undefined;
             if(!this._dispatchToken){                
                 this.__dispatcher = dispatcher;
-                cc.log('Dang ky dispatcher '+ this.__dispatcher.name +' cho ' + this.constructor.name)
+                cc.log('Dang ky dispatcher '+ this.__dispatcher.name +' cho ' + this.__className)
                 this._dispatchToken = this.__dispatcher.register((payload)=>{
                     this.__invokeOnDispatch(payload);
                 });
@@ -67,7 +67,7 @@ cc.Class({
             }else{
                 if(isForce){
                     // Gỡ dispatcher cũ.
-                    cc.log('Gỡ dispatcher cũ: ' + this.constructor.name)
+                    cc.log('Gỡ dispatcher cũ: ' + this.__className)
                     if(this.__dispatcher){
                         this.__dispatcher.unregister(this._dispatchToken);
                     } 
@@ -78,7 +78,7 @@ cc.Class({
             } 
             // dispatcher.test();                   
         }else{
-            (!dispatcher && this.__dispatcher) ? CC_DEBUG ? cc.log(this.constructor.name + ".setDispatcher(dispatcher): Sử dụng Dispatcher mặc định.") : cc.error(false) : undefined;
+            (!dispatcher && this.__dispatcher) ? CC_DEBUG ? cc.log(this.__className + ".setDispatcher(dispatcher): Sử dụng Dispatcher mặc định.") : cc.error(false) : undefined;
         }        
     },
 
@@ -95,7 +95,7 @@ cc.Class({
      * Returns whether the store has changed during the most recent dispatch.
      */
     hasChanged(){
-        !this.getDispatcher().isDispatching() ? CC_DEBUG ? cc.error( this.constructor.name + ".hasChanged(): Hàm này chỉ được gọi lúc đang dispatching.") : cc.error(false) : undefined;
+        !this.getDispatcher().isDispatching() ? CC_DEBUG ? cc.error( this.__className + ".hasChanged(): Hàm này chỉ được gọi lúc đang dispatching.") : cc.error(false) : undefined;
         return this.__changed;
     },
 
@@ -110,7 +110,7 @@ cc.Class({
     // ------------------------------------------------------------------------
 
     __emitChange() {        
-        !this.getDispatcher().isDispatching() ? CC_DEBUG ? cc.error( this.constructor.name + ".__emitChange(): Hàm này chỉ được gọi lúc đang dispatching.") : cc.error(false) : undefined;
+        !this.getDispatcher().isDispatching() ? CC_DEBUG ? cc.error( this.__className + ".__emitChange(): Hàm này chỉ được gọi lúc đang dispatching.") : cc.error(false) : undefined;
         this.__changed = true;
     },
 
@@ -131,7 +131,7 @@ cc.Class({
      * only way the store receives new data.
      */
     __onDispatch(payload) {        
-        !false ? CC_DEBUG ? cc.error( this.constructor.name + ' đồng chí đã quên overridden hàm __onDispatch(), việc làm này là bắt buộc') : cc.error(false) : undefined;
+        !false ? CC_DEBUG ? cc.error( this.__className + ' đồng chí đã quên overridden hàm __onDispatch(), việc làm này là bắt buộc') : cc.error(false) : undefined;
     }
 
 });

@@ -32,7 +32,7 @@ var Dispatcher = cc.Class({
     },
 
     ctor(){        
-        this.__className = this.constructor.name;
+        this.__className = this.__className;
         this._callbacks = Object.create(null);
         this._isDispatching = false;
         this._isHandled = Object.create(null);
@@ -65,7 +65,7 @@ var Dispatcher = cc.Class({
      * Removes a callback based on its token.
      */
     unregister(id) {
-        !this._callbacks[id] ? CC_DEBUG ? cc.error( this.constructor.name + ".unregister(...): Bỏ đăng ký thất bại. Không tìm được callback nào tương ứng " + id) : cc.error(false) : undefined;
+        !this._callbacks[id] ? CC_DEBUG ? cc.error( this.__className + ".unregister(...): Bỏ đăng ký thất bại. Không tìm được callback nào tương ứng `%s`.", id) : cc.error(false) : undefined;
         delete this._callbacks[id];
         if(CC_DEBUG){
             if(this._count < 0) throw new Error("Đã xóa hết store trước đó !");
@@ -80,14 +80,14 @@ var Dispatcher = cc.Class({
      * response to a dispatched payload.
      */
     waitFor(ids) {
-        !this._isDispatching ? CC_DEBUG ? cc.error( this.constructor.name + ".waitFor(...): Hàm chỉ sử dụng trong lúc dispatch. Ví dụ: trong hàm callback trả về payload") : cc.error(false) : undefined;
+        !this._isDispatching ? CC_DEBUG ? cc.error( this.__className + ".waitFor(...): Hàm chỉ sử dụng trong lúc dispatch. Ví dụ: trong hàm callback trả về payload") : cc.error(false) : undefined;
         for (var ii = 0; ii < ids.length; ii++) {
             var id = ids[ii];
             if (this._isPending[id]) {                
-                !this._isHandled[id] ? CC_DEBUG ? cc.error( this.constructor.name + ".waitFor(...): Phát hiện lỗi lặp vòng tròn (A đợi B, B đợi A) ' + 'trong lức chờ `" + id + "`.") : cc.error(false) : undefined;
+                !this._isHandled[id] ? CC_DEBUG ? cc.error( this.__className + ".waitFor(...): Phát hiện lỗi lặp vòng tròn (A đợi B, B đợi A) ' + 'trong lức chờ `" + id + "`.") : cc.error(false) : undefined;
                 continue;
             }
-            !this._callbacks[id] ? CC_DEBUG ? cc.error( this.constructor.name + ".waitFor(...): Không tìm được callback nào tương ứng `" + id + "`.") : cc.error(false) : undefined;
+            !this._callbacks[id] ? CC_DEBUG ? cc.error( this.__className + ".waitFor(...): Không tìm được callback nào tương ứng `" + id + "`.") : cc.error(false) : undefined;
             this._invokeCallback(id);
         }
     },
@@ -96,7 +96,7 @@ var Dispatcher = cc.Class({
      * Dispatches a payload to all registered callbacks.
      */
     dispatch(payload) {        
-        !!this._isDispatching ? CC_DEBUG ? cc.error( this.constructor.name + ".dispatch(...): Không thể xen giữa khi sự kiện dispatch trước đó chưa kết thúc.") : cc.error(false) : undefined;        
+        !!this._isDispatching ? CC_DEBUG ? cc.error( this.__className + ".dispatch(...): Không thể xen giữa khi sự kiện dispatch trước đó chưa kết thúc.") : cc.error(false) : undefined;        
         this._startDispatching(payload);
         try {
             for (var id in this._callbacks) {

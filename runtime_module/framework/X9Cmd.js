@@ -1,8 +1,9 @@
 
-var Dispatcher = require("Dispatcher");
+var Dispatcher = require("X9Dispatcher");
 var Command = require("Command");
 var Helper = require("X9Helper");
 var X9OrientedCommand = require("X9OrientedCommand");
+var X9LocalData = require("X9LocalData");
 /**
  * Class được sử dụng để khai báo command trong editor.
  * 
@@ -20,7 +21,7 @@ var X9OrientedCommand = require("X9OrientedCommand");
  */
 cc.Class({
     extends: cc.Component,
-    mixins: [Command, X9OrientedCommand],
+    mixins: [Command, X9OrientedCommand, X9LocalData],
 
     properties:{
         isGlobal: {
@@ -31,14 +32,13 @@ cc.Class({
     },
 
     test(){
-        cc.log(this.constructor.name + ":: test successful !");
+        cc.log(this.__className + ":: test successful !");
     },
 
     /**
      * 
      */
     onLoad(){
-
         if(this.node){   
             this.setDispatcher(Helper.findNearbyDispatcher(this.node));
             if(this.isGlobal){
@@ -55,7 +55,7 @@ cc.Class({
         var dispatchers = this.getDispatchers();
         if(dispatchers.indexOf(dispatcher) == -1){
             // cc.log("Check không trùng lặp dispatcher")
-            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.constructor.name + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : dispatchers.push(dispatcher);
+            !(dispatcher instanceof Dispatcher) ? CC_DEBUG ? cc.error(this.__className + ".setDispatcher(dispatcher): Dispatcher truyền vào phải khác là subclass của Dispatcher") : cc.error(false) : dispatchers.push(dispatcher);
         }
         // cc.log('Dispatchers Length :: ' + dispatchers.length);
     },

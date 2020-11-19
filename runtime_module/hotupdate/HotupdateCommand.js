@@ -170,8 +170,7 @@ var HotupdateCommand = cc.Class({
     getAssetManager(){
         if(!this._am){
             // Hot update is only available in Native build
-            if (!cc.sys.isNative) {
-                CC_DEBUG && cc.log("Không phải native !");
+            if (!cc.sys.isNative) {                
                 this.cmd({msg:'Only support for native devices.'}, HotupdateCommand.HOTUPDATE_SKIPPED);
                 return;
             }
@@ -241,9 +240,9 @@ var HotupdateCommand = cc.Class({
      */
     _getNativeURL(){
         if(!this.manifestUrl) {
-            throw new Error(this.constructor.name + ": Chưa khai báo đường dẫn file project manifest !")
+            throw new Error(this.__className + ": Chưa khai báo đường dẫn file project manifest !")
         }else if(!(this.manifestUrl instanceof cc.Asset)){
-            throw new Error(this.constructor.name + ": Sai kiểu manifest, phải là cc.Asset !")
+            throw new Error(this.__className + ": Sai kiểu manifest, phải là cc.Asset !")
         }        
         return this.manifestUrl.nativeUrl;
     },

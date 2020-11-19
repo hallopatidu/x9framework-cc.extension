@@ -6,6 +6,7 @@ var X9OrientedCommand = cc.Class({
     statics: {
         TYPE_ARG: "__type__",
         CLASS_ARG: "__class__",
+        ERROR_ARG: "__error__",
     },
 
 
@@ -17,11 +18,11 @@ var X9OrientedCommand = cc.Class({
      */
     cmd(option, type, classTargetName){
         if(!option) {
-            throw new Error(this.constructor.name + "::cmd(option, type, classTargetName) : " +"option không xác định hoặc null")
+            throw new Error(this.__className + "::cmd(option, type, classTargetName) : " +"option không xác định hoặc null")
         }
         option[X9OrientedCommand.TYPE_ARG] = type ? type : "default";
         if(classTargetName){
-            option[X9AutoReduceStyle.CLASS_ARG] = classTargetName;
+            option[X9OrientedCommand.CLASS_ARG] = classTargetName;
         }
 
         if(this.dispatch && (typeof this.dispatch === 'function')){     
@@ -29,8 +30,8 @@ var X9OrientedCommand = cc.Class({
         }else if(this.getDispatcher){
             this.getDispatcher().dispatch(option);
         }else{
-            throw new Error(this.constructor.name + "::cmd(option, type, classTargetName) : " +" Chỉ sử dụng template này cho các subclass của X9Com hoặc X9Cmd")
+            throw new Error(this.__className + "::cmd(option, type, classTargetName) : " +" Chỉ sử dụng template này cho các subclass của X9Com hoặc X9Cmd")
         }
-    },
+    }
 
 })
