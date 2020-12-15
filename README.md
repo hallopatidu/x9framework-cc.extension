@@ -7,8 +7,8 @@ Framework cho phép lập trình game theo hướng Statement, đồng thời ph
 Framework bám chặt và bổ trợ cho phần mềm Cocos Creator (một phần chủ động inject trực tiếp vào cocos2dx js) nhằm hỗ trợ việc dễ dàng hơn khi quản lý code lần tương tác giao diện với Cocos Creator.  Framework được đóng gói dưới dạng một extension (./package) của Cocos Creator.
 
 ## CÀI ĐẶT
-* Kéo git về.
-* Copy cả thư mục ngoài cùng vào thư mục /packages trong Cocos Creator Project
+* Kéo git về. hoặc npm install x9framework để lấy module x9framework (Định đẩy lên store bên cc-creator nhưng đòi id công dân trung quốc -> lại thôi)
+* Copy cả thư mục lấy về vào thư mục /packages trong Cocos Creator Project
 * Chạy đoạn lệnh 'npm install' trong Window Command Prompt tại thư mục git để cài các gói nodejs cần thiết.
 
 
