@@ -1,5 +1,5 @@
 # x9framework-cc.extension
-A Framework for Cocos Creator Editor based on Flux Architect - a Data Flow Design Pattern.
+A Framework for Cocos Creator Editor v2.x based on Flux Architect - a Data Flow Design Pattern.
 ![](https://github.com/hallopatidu/x9framework-CCExtension/blob/master/doc/images/fig02.PNG)
 ![Cứ kế thừa là có thể được phân loại trong cocos creator](https://github.com/hallopatidu/x9framework-CCExtension/blob/master/doc/images/fig03.png)
 
